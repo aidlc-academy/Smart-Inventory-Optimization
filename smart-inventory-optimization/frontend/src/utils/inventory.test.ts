@@ -174,4 +174,9 @@ describe('calcTrendWarning', () => {
   it('returns false when both are 0', () => {
     expect(calcTrendWarning(0, 0)).toBe(false);
   });
+
+  it('returns true when add7 is 0 and add3 is positive (any positive add3 > 0)', () => {
+    // add3 > 0 * 1.20 = 0 → true
+    expect(calcTrendWarning(1, 0)).toBe(true);
+  });
 });

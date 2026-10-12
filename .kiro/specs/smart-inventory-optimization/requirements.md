@@ -65,7 +65,7 @@ Smart Inventory Optimization helps small retailers manage stock levels using tra
 - AC-05-1: The sales entry form accepts a product (pre-selected if navigating from a product), a date, and a quantity (integer ≥ 0).
 - AC-05-2: Submitting stores the sales record, decrements `current_stock` by the units sold in the same database transaction, and shows a success message with the new stock level.
 - AC-05-3: If a record already exists for the same product and date, submitting replaces it (upsert). The stock adjustment is the difference between the new and old quantity (e.g. old = 3, new = 5 → stock decrements by 2). Shows "Updated existing entry for [date]".
-- AC-05-4: If recording the sale would reduce `current_stock` below zero, the API rejects the request with the error "Cannot record sale: would reduce stock below zero (current stock: N, requested: M)".
+- AC-05-4: If recording the sale would reduce `current_stock` below zero, the API rejects the request with the error "Cannot record sale: would reduce stock below zero (current: N, requested: M)".
 - AC-05-5: Entering a non-integer or negative quantity shows a validation error.
 - AC-05-6: Entering a future date shows the warning "Date is in the future — are you sure?" but still allows submission.
 - AC-05-7: After entry, the dashboard figures for that product recalculate immediately (on next page load or auto-refresh).
