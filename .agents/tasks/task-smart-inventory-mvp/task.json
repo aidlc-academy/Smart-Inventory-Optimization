@@ -1,0 +1,7 @@
+{
+  "task_id": "task-smart-inventory-mvp",
+  "task_description": "Build the Smart Inventory Optimization MVP: a React+TypeScript frontend, Node.js+Express backend, and SQLite database. Implements formula-based inventory management with deterministic calculations, product CRUD, daily sales entry with stock decrements, restock with stock increments, inventory dashboard with reorder alerts, formula traces, and a demo seed dataset. No AI/ML claims anywhere.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

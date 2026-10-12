@@ -1,0 +1,24 @@
+{
+  "project_type": "React+TypeScript+Vite SPA frontend + Node.js+Express REST API backend + SQLite via better-sqlite3",
+  "language": "TypeScript (strict mode, both frontend and backend)",
+  "build_system": "npm workspaces are NOT used — frontend and backend are separate npm projects under smart-inventory-optimization/frontend/ and smart-inventory-optimization/backend/ respectively. Each has its own package.json and node_modules. Build backend: cd backend && npm run build (tsc). Build frontend: cd frontend && npm run build (vite build).",
+  "test_framework": "Jest (backend, ts-jest preset) + Vitest (frontend, jsdom environment, globals:true). Backend test command: cd smart-inventory-optimization/backend && npm test. Frontend test command: cd smart-inventory-optimization/frontend && npm run test -- --run",
+  "build_command": "cd smart-inventory-optimization/backend && npm run build   AND   cd smart-inventory-optimization/frontend && npm run build",
+  "test_command": "cd smart-inventory-optimization/backend && npm test   AND   cd smart-inventory-optimization/frontend && npm run test -- --run",
+  "verification_instructions": "1. Start backend: cd smart-inventory-optimization/backend && npm install && npm run dev (port 3001). 2. Start frontend: cd smart-inventory-optimization/frontend && npm install && npm run dev (port 5173). 3. GET http://localhost:3001/api/v1/health → {status:'ok'}. 4. POST http://localhost:3001/api/v1/seed → GET /api/v1/dashboard shows Coffee with status 'Reorder now' and trendWarning:true. 5. Run backend tests: npm test in backend. 6. Run frontend tests: npm run test -- --run in frontend.",
+  "snapshot_or_generated_files": "smart-inventory-optimization/backend/inventory.db is created at runtime (NOT committed). smart-inventory-optimization/backend/dist/ is compiled output (NOT committed). frontend/dist/ is build output (NOT committed).",
+  "environment_constraints": "Windows PowerShell environment. Node.js 20 LTS required. No Docker. No cloud services. SQLite file inventory.db lives at smart-inventory-optimization/backend/inventory.db (relative to backend process CWD). Workspace root is c:\\Users\\ELCOT\\OneDrive\\Documents\\kiro project — ALL source files go under smart-inventory-optimization/ inside this workspace root. Do NOT write files outside the workspace root.",
+  "contribution_requirements": "1. No AI/ML language anywhere (UI, comments, README, API responses). Prohibited: AI, ML, predict, forecast, neural, machine learning. 2. All formulas must exactly match calculation-rules.md and design.md §4. 3. All demo/seed data labelled is_sample=1 and shown as '(Sample)' in UI. 4. Every calculated field must have a formula trace in the UI. 5. Stock never goes below zero — API must enforce this with 400 error. 6. All database access uses prepared statements — no string-concatenated SQL.",
+  "key_patterns": "Backend: thin route handlers → service functions for all business logic. Formula functions are pure (no DB/network calls). db.transaction() used for all multi-step mutations. Sales upsert: INSERT OR REPLACE + stock delta adjustment. Frontend: functional React components only, one per file. Custom hooks (useProducts, useDashboard) for data fetching. Formula functions in src/utils/inventory.ts mirror backend exactly. CSS custom properties in index.css, no external UI library.",
+  "relevant_files": [
+    "c:\\Users\\ELCOT\\OneDrive\\Documents\\kiro project\\.kiro\\steering\\calculation-rules.md",
+    "c:\\Users\\ELCOT\\OneDrive\\Documents\\kiro project\\.kiro\\steering\\tech-stack.md",
+    "c:\\Users\\ELCOT\\OneDrive\\Documents\\kiro project\\.kiro\\steering\\challenge-rules.md",
+    "c:\\Users\\ELCOT\\OneDrive\\Documents\\kiro project\\.kiro\\specs\\smart-inventory-optimization\\design.md",
+    "c:\\Users\\ELCOT\\OneDrive\\Documents\\kiro project\\.kiro\\specs\\smart-inventory-optimization\\requirements.md",
+    "c:\\Users\\ELCOT\\OneDrive\\Documents\\kiro project\\.kiro\\specs\\smart-inventory-optimization\\tasks.md",
+    "c:\\Users\\ELCOT\\OneDrive\\Documents\\kiro project\\DECISIONS.md",
+    "c:\\Users\\ELCOT\\OneDrive\\Documents\\kiro project\\.agents\\tasks\\plan.md"
+  ],
+  "directory_structure": "c:\\Users\\ELCOT\\OneDrive\\Documents\\kiro project\\ (workspace root) contains: .kiro/ (steering + specs), DECISIONS.md. All NEW source code goes under smart-inventory-optimization/ inside the workspace root: smart-inventory-optimization/backend/ (Node+Express), smart-inventory-optimization/frontend/ (React+Vite), smart-inventory-optimization/README.md."
+}
