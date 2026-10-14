@@ -52,6 +52,14 @@ export default function ProductDetailPage() {
   const [restockError, setRestockError] = useState<string | null>(null);
   const [restockSubmitting, setRestockSubmitting] = useState(false);
 
+  // Date range filter for sales table
+  const [filterStartDate, setFilterStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  });
+  const [filterEndDate, setFilterEndDate] = useState(todayISO());
+
   const productId = Number(id);
 
   async function loadData() {
@@ -62,6 +70,8 @@ export default function ProductDetailPage() {
         getMovements(productId),
       ]);
       setProduct(p);
+      // Sort sales descending by date (most recent first)
+      s.sort((a, b) => b.sale_date.localeCompare(a.sale_date));
       setSales(s);
       setMovements(m);
       setLoading(false);
@@ -216,6 +226,15 @@ export default function ProductDetailPage() {
 
   const isFutureDate = saleDate > today;
 
+  // Filter sales by selected date range
+  const filteredSales = sales.filter((s) => {
+    if (filterStartDate && s.sale_date < filterStartDate) return false;
+    if (filterEndDate && s.sale_date > filterEndDate) return false;
+    return true;
+  });
+
+  const totalUnitsInRange = filteredSales.reduce((sum, s) => sum + s.units_sold, 0);
+
   return (
     <>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
@@ -301,27 +320,27 @@ export default function ProductDetailPage() {
 
       {/* Product config */}
       <div className="card" style={{ marginBottom: 24 }}>
-        <div style={{ fontWeight: 600, marginBottom: 10, fontSize: 13 }}>Configuration</div>
+        <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 13, color: 'var(--color-gold)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Configuration</div>
         <div
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}
         >
           <div>
-            <div style={{ fontSize: 11, color: 'var(--color-muted)', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 11, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
               Lead Time
             </div>
-            <div>{product.supplier_lead_time_days} days</div>
+            <div style={{ fontWeight: 600 }}>{product.supplier_lead_time_days} days</div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--color-muted)', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 11, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
               Safety Stock <span className="assumption-label">User-set</span>
             </div>
-            <div>{product.safety_stock} units</div>
+            <div style={{ fontWeight: 600 }}>{product.safety_stock} units</div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--color-muted)', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 11, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
               Target Coverage <span className="assumption-label">User-set</span>
             </div>
-            <div>{product.target_coverage_days} days</div>
+            <div style={{ fontWeight: 600 }}>{product.target_coverage_days} days</div>
           </div>
         </div>
       </div>
@@ -440,11 +459,76 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Sales history table */}
-      <h2 className="section-title">Sales History (Last 30 Days)</h2>
-      {sales.length === 0 ? (
+      {/* Sales history summary card */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+          <div className="card">
+            <div style={{ fontSize: 12, color: 'var(--color-gold)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+              Sales Summary
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-gold-bright)', marginBottom: 4 }}>
+              {totalUnitsInRange}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--color-muted)' }}>
+              Units sold
+              {filterStartDate !== '' && filterEndDate !== '' && (
+                <span style={{ marginLeft: 6, fontStyle: 'italic' }}>
+                  from {filterStartDate} to {filterEndDate}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sales history table with date-range filter */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
+        <h2 className="section-title" style={{ marginBottom: 0 }}>Sales History</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4, display: 'block' }}>
+              Start Date
+            </label>
+            <input
+              type="date"
+              className="form-input"
+              style={{ width: 150 }}
+              value={filterStartDate}
+              onChange={(e) => setFilterStartDate(e.target.value)}
+              aria-label="Filter start date"
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: 11, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4, display: 'block' }}>
+              End Date
+            </label>
+            <input
+              type="date"
+              className="form-input"
+              style={{ width: 150 }}
+              value={filterEndDate}
+              onChange={(e) => setFilterEndDate(e.target.value)}
+              aria-label="Filter end date"
+            />
+          </div>
+          <button
+            className="btn btn-secondary"
+            style={{ padding: '8px 14px', fontSize: 12 }}
+            onClick={() => {
+              const d = new Date();
+              d.setDate(d.getDate() - 30);
+              setFilterStartDate(d.toISOString().slice(0, 10));
+              setFilterEndDate(todayISO());
+            }}
+          >
+            Reset to 30 days
+          </button>
+        </div>
+      </div>
+
+      {filteredSales.length === 0 ? (
         <div className="card text-muted" style={{ padding: '24px', textAlign: 'center' }}>
-          No sales recorded in the last 30 days.
+          No sales recorded in the selected date range.
         </div>
       ) : (
         <div className="table-wrapper" style={{ marginBottom: 24 }}>
@@ -453,13 +537,28 @@ export default function ProductDetailPage() {
               <tr>
                 <th scope="col">Date</th>
                 <th scope="col">Units Sold</th>
+                <th scope="col" style={{ width: 80 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {sales.map((s) => (
+              {filteredSales.map((s) => (
                 <tr key={s.id}>
                   <td>{s.sale_date}</td>
                   <td>{s.units_sold}</td>
+                  <td>
+                    <button
+                      className="btn btn-ghost"
+                      style={{ fontSize: 11, padding: '4px 8px' }}
+                      onClick={() => {
+                        setSaleDate(s.sale_date);
+                        setSaleUnits(s.units_sold.toString());
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      aria-label={`Edit sale on ${s.sale_date}`}
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

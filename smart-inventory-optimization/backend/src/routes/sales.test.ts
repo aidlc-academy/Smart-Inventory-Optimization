@@ -1,53 +1,70 @@
 import request from 'supertest';
-import path from 'path';
-import fs from 'fs';
 import express from 'express';
+import { Pool } from 'pg';
+import dotenv from 'dotenv';
 
-// Use a separate test database file to avoid touching the real inventory.db
-const TEST_DB_PATH = path.join(__dirname, '../../test-inventory.db');
+dotenv.config();
 
-// Mock the database module before importing routes
-jest.mock('../db/database', () => {
-  const Database = require('better-sqlite3');
-  const path = require('path');
-  const testDbPath = path.join(__dirname, '../../test-inventory.db');
-  const testDb = new Database(testDbPath);
-  testDb.pragma('journal_mode = WAL');
-  testDb.pragma('foreign_keys = ON');
-  return testDb;
-});
+// Use a test database URL or fall back to a local test database
+const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/smart_inventory_test';
 
-// Import routes AFTER mocking the db
+let pool: Pool;
+let app: express.Application;
+
+// Import routes after setting up the mock
 import productsRouter from './products';
 import salesRouter from './sales';
-import { runMigrations as migrate } from '../db/migrations';
+import { runMigrations } from '../db/migrations';
 
-// Get the mocked db
-const db = require('../db/database');
-
-// Build test app mirroring the production mount structure
-const app = express();
-app.use(express.json());
-app.use('/api/v1/products', productsRouter);
-// salesRouter is mounted at /:id level — its routes are /sales, /restock, /movements
-app.use('/api/v1/products/:id', salesRouter);
-
-beforeAll(() => {
-  migrate(db);
+// Mock the database module
+jest.mock('../db/database', () => {
+  const { Pool } = require('pg');
+  const testPool = new Pool({
+    connectionString: TEST_DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false,
+  });
+  
+  return {
+    pool: testPool,
+    query: (sql: string, params?: any[]) => testPool.query(sql, params).then((r: any) => r.rows),
+    queryOne: (sql: string, params?: any[]) => testPool.query(sql, params).then((r: any) => r.rows[0] ?? null),
+    execute: (sql: string, params?: any[]) => testPool.query(sql, params).then((r: any) => ({ rowCount: r.rowCount ?? 0 })),
+    getClient: () => testPool.connect(),
+    closePool: () => testPool.end(),
+    default: testPool,
+  };
 });
 
-afterAll(() => {
-  db.close();
-  if (fs.existsSync(TEST_DB_PATH)) {
-    fs.unlinkSync(TEST_DB_PATH);
-  }
+beforeAll(async () => {
+  const { pool: testPool } = require('../db/database');
+  pool = testPool;
+  
+  // Run migrations
+  await runMigrations(pool);
+
+  // Build test app
+  app = express();
+  app.use(express.json());
+  app.use('/api/v1/products', productsRouter);
+  app.use('/api/v1/products/:id', salesRouter);
 });
 
-beforeEach(() => {
+afterAll(async () => {
+  await pool.end();
+});
+
+beforeEach(async () => {
   // Clean up between tests
-  db.exec('DELETE FROM stock_movements');
-  db.exec('DELETE FROM sales_records');
-  db.exec('DELETE FROM products');
+  await pool.query('DELETE FROM stock_movements');
+  await pool.query('DELETE FROM sales_records');
+  await pool.query('DELETE FROM purchase_orders');
+  await pool.query('DELETE FROM products');
+  
+  // Reset sequences
+  await pool.query("SELECT setval('products_id_seq', 1, false)");
+  await pool.query("SELECT setval('sales_records_id_seq', 1, false)");
+  await pool.query("SELECT setval('stock_movements_id_seq', 1, false)");
+  await pool.query("SELECT setval('purchase_orders_id_seq', 1, false)");
 });
 
 function createTestProduct(overrides: Record<string, unknown> = {}) {
@@ -129,11 +146,12 @@ describe('POST /api/v1/products/:id/sales', () => {
     expect(afterSecond.body.current_stock).toBe(92);
 
     // Confirm only one sales row for this product+date
-    const salesRows = db
-      .prepare('SELECT * FROM sales_records WHERE product_id = ? AND sale_date = ?')
-      .all(productId, saleDate);
-    expect(salesRows.length).toBe(1);
-    expect(salesRows[0].units_sold).toBe(8);
+    const salesResult = await pool.query(
+      'SELECT * FROM sales_records WHERE product_id = $1 AND sale_date = $2',
+      [productId, saleDate]
+    );
+    expect(salesResult.rows.length).toBe(1);
+    expect(salesResult.rows[0].units_sold).toBe(8);
   });
 
   test('updating to fewer units than before increases stock (negative delta)', async () => {
@@ -190,13 +208,14 @@ describe('POST /api/v1/products/:id/restock', () => {
       .post(`/api/v1/products/${productId}/restock`)
       .send({ quantity: 15, note: 'Weekly delivery' });
 
-    const movements = db
-      .prepare("SELECT * FROM stock_movements WHERE product_id = ? AND type = 'restock'")
-      .all(productId);
-    expect(movements.length).toBe(1);
-    expect(movements[0].quantity).toBe(15);
-    expect(movements[0].type).toBe('restock');
-    expect(movements[0].note).toBe('Weekly delivery');
+    const movementsResult = await pool.query(
+      "SELECT * FROM stock_movements WHERE product_id = $1 AND type = 'restock'",
+      [productId]
+    );
+    expect(movementsResult.rows.length).toBe(1);
+    expect(movementsResult.rows[0].quantity).toBe(15);
+    expect(movementsResult.rows[0].type).toBe('restock');
+    expect(movementsResult.rows[0].note).toBe('Weekly delivery');
   });
 });
 

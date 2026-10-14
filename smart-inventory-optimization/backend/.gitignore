@@ -5,3 +5,8 @@ test-inventory.db
 *.db-journal
 *.db-wal
 *.db-shm
+
+# Environment files (contain credentials)
+.env
+.env.local
+.env.*.local

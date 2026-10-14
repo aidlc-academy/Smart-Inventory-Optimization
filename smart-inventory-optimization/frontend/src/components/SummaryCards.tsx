@@ -5,39 +5,58 @@ interface SummaryCardsProps {
 }
 
 /**
- * Renders 3 summary stat cards:
- *   - Total Products
- *   - Low Stock (status != 'Healthy')
- *   - Needs Reorder (status == 'Reorder now')
+ * Three summary stat cards: Total Products, Low Stock, Needs Reorder.
+ * Uses dark theme card variants with gold / danger / success accent stripes.
  */
 export default function SummaryCards({ data }: SummaryCardsProps) {
-  const total = data.length;
-  const lowStock = data.filter((p) => p.status !== 'Healthy').length;
+  const total        = data.length;
+  const lowStock     = data.filter((p) => p.status !== 'Healthy').length;
   const needsReorder = data.filter((p) => p.status === 'Reorder now').length;
+  const healthy      = data.filter((p) => p.status === 'Healthy').length;
 
   return (
     <div className="summary-cards">
-      <div className="summary-card card">
+      {/* Total */}
+      <div className="summary-card">
+        <span className="summary-card-icon" aria-hidden="true">📦</span>
         <div className="summary-card-value">{total}</div>
         <div className="summary-card-label">Total Products</div>
       </div>
-      <div className="summary-card card">
+
+      {/* Needs reorder */}
+      <div className={`summary-card${needsReorder > 0 ? ' danger' : ''}`}>
+        <span className="summary-card-icon" aria-hidden="true">🔴</span>
         <div
-          className="summary-card-value"
-          style={{ color: lowStock > 0 ? 'var(--color-warning)' : undefined }}
-        >
-          {lowStock}
-        </div>
-        <div className="summary-card-label">Low Stock</div>
-      </div>
-      <div className="summary-card card">
-        <div
-          className="summary-card-value"
-          style={{ color: needsReorder > 0 ? 'var(--color-danger)' : undefined }}
+          className={`summary-card-value${needsReorder > 0 ? ' danger' : ''}`}
+          aria-label={`${needsReorder} products need reordering`}
         >
           {needsReorder}
         </div>
         <div className="summary-card-label">Needs Reorder</div>
+      </div>
+
+      {/* Low stock (Watch + Reorder now) */}
+      <div className={`summary-card${lowStock > 0 && lowStock !== needsReorder ? ' danger' : ''}`}>
+        <span className="summary-card-icon" aria-hidden="true">⚠️</span>
+        <div
+          className={`summary-card-value${lowStock > 0 ? ' danger' : ''}`}
+          aria-label={`${lowStock} products with low stock`}
+        >
+          {lowStock}
+        </div>
+        <div className="summary-card-label">Low / Watch Stock</div>
+      </div>
+
+      {/* Healthy */}
+      <div className={`summary-card${healthy === total && total > 0 ? ' success' : ''}`}>
+        <span className="summary-card-icon" aria-hidden="true">✅</span>
+        <div
+          className={`summary-card-value${healthy === total && total > 0 ? ' success' : ''}`}
+          aria-label={`${healthy} products healthy`}
+        >
+          {healthy}
+        </div>
+        <div className="summary-card-label">Healthy</div>
       </div>
     </div>
   );

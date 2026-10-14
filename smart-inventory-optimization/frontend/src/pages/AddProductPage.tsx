@@ -40,7 +40,7 @@ export default function AddProductPage() {
       <div className="page-header">
         <h1 className="page-title">Add Product</h1>
       </div>
-      <div className="card" style={{ maxWidth: 560 }}>
+      <div className="card" style={{ maxWidth: 560, background: 'var(--color-surface)' }}>
         <ProductForm
           onSubmit={handleSubmit}
           submitLabel="Add Product"

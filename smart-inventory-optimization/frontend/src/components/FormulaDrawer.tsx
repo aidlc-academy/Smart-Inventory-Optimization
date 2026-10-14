@@ -58,7 +58,7 @@ export default function FormulaDrawer({ product, onClose }: FormulaDrawerProps) 
         </div>
         <div className="drawer-body">
           <p style={{ fontSize: 13, color: 'var(--color-muted)', marginBottom: 20 }}>
-            Product: <strong>{name}</strong>
+            Product: <strong style={{ color: 'var(--color-gold-bright)' }}>{name}</strong>
           </p>
 
           {/* Step 1 — ADD_7 */}
@@ -110,7 +110,7 @@ export default function FormulaDrawer({ product, onClose }: FormulaDrawerProps) 
               <strong>= {suggestedOrderQty} units</strong>
               {suggestedOrderQty === 0 && (
                 <span style={{ color: 'var(--color-success)', marginLeft: 6 }}>
-                  (Stock sufficient)
+                  ✓ Stock sufficient
                 </span>
               )}
             </div>

@@ -4,4 +4,10 @@ dist/
 *.db-journal
 *.db-wal
 *.db-shm
+*.db.backup
+*.db-shm
 .env
+
+# Data backups — never commit
+**/unassigned-backup.json
+**/inventory.db.backup

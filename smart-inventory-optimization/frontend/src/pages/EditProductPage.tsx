@@ -86,7 +86,7 @@ export default function EditProductPage() {
           Cancel
         </Link>
       </div>
-      <div className="card" style={{ maxWidth: 560 }}>
+      <div className="card" style={{ maxWidth: 560, background: 'var(--color-surface)' }}>
         <ProductForm
           initialValues={product}
           onSubmit={handleSubmit}
