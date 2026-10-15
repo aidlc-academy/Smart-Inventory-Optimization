@@ -3,11 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { onboard } from '../api/client';
 
 /**
- * Shown when the user is authenticated but onboarding failed or has no
- * owner/shop names in sessionStorage (e.g. after email confirmation redirect).
+ * Shown when the backend confirms the user has no shop yet (needs_setup).
+ * Calls completeOnboard() directly so the parent updates without a full re-fetch.
  */
 export default function OnboardingPage() {
-  const { session, retryOnboard } = useAuth();
+  const { session, completeOnboard } = useAuth();
   const [ownerName, setOwnerName] = useState('');
   const [shopName,  setShopName]  = useState('');
   const [loading,   setLoading]   = useState(false);
@@ -22,11 +22,17 @@ export default function OnboardingPage() {
 
     setLoading(true);
     try {
-      // Persist so AuthContext can use them
-      sessionStorage.setItem('pending_owner_name', ownerName.trim());
-      sessionStorage.setItem('pending_shop_name',  shopName.trim());
-      await onboard({ owner_name: ownerName.trim(), shop_name: shopName.trim() }, session.access_token);
-      retryOnboard(); // trigger AuthContext to update shop state
+      const result = await onboard(
+        { owner_name: ownerName.trim(), shop_name: shopName.trim() },
+        session.access_token
+      );
+      // Both 200 (already onboarded) and 201 (newly created) return the real shop
+      completeOnboard({
+        owner_id:   result.owner_id,
+        shop_id:    result.shop_id,
+        owner_name: result.owner_name,
+        shop_name:  result.shop_name,
+      });
     } catch (err: any) {
       setError(err.message ?? 'Onboarding failed. Please try again.');
     } finally {

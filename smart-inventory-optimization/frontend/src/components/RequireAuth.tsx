@@ -3,19 +3,21 @@ import { useAuth } from '../context/AuthContext';
 import OnboardingPage from '../pages/OnboardingPage';
 
 /**
- * Wraps inventory routes:
- *  - Not loaded yet  → loading spinner
- *  - No session      → redirect to /login
- *  - Session but onboarding incomplete → show OnboardingPage (inline, not redirect)
- *  - Session + onboarded → render children
+ * Guards all inventory routes.
+ *
+ * pending      → loading spinner (session restore or shop fetch in progress)
+ * no session   → redirect to /login
+ * needs_setup  → backend confirmed no shop exists yet → show OnboardingPage
+ * failed       → transient error (network / 5xx) → show Retry (not onboarding form)
+ * complete     → render children
  */
 export default function RequireAuth() {
-  const { session, onboardStatus, loading } = useAuth();
+  const { session, onboardStatus, loading, retryOnboard } = useAuth();
 
-  if (loading) {
+  if (loading || onboardStatus === 'pending') {
     return (
       <div className="state-container">
-        <div className="spinner" role="status" aria-label="Restoring session…" />
+        <div className="spinner" role="status" aria-label="Loading…" />
         <div className="state-text">Loading…</div>
       </div>
     );
@@ -25,17 +27,22 @@ export default function RequireAuth() {
     return <Navigate to="/login" replace />;
   }
 
-  if (onboardStatus === 'pending') {
-    return (
-      <div className="state-container">
-        <div className="spinner" role="status" aria-label="Setting up shop…" />
-        <div className="state-text">Setting up your shop…</div>
-      </div>
-    );
+  if (onboardStatus === 'needs_setup') {
+    return <OnboardingPage />;
   }
 
   if (onboardStatus === 'failed') {
-    return <OnboardingPage />;
+    return (
+      <div className="state-container">
+        <div className="state-icon">⚠</div>
+        <div className="state-text" role="alert">
+          Could not connect to the server. Please check your connection and try again.
+        </div>
+        <button className="btn btn-primary" onClick={retryOnboard}>
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return <Outlet />;

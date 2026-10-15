@@ -132,9 +132,28 @@ export interface OnboardResult {
 }
 
 /**
- * Calls POST /api/v1/onboard with an explicit access token.
- * Bypasses the automatic session lookup so it can be called immediately
- * after signup when the session may not be in the Supabase client yet.
+ * GET /api/v1/onboard — fetch the existing shop for the authenticated user.
+ * Returns the shop data if onboarded, or throws a 404 ApiError if not.
+ */
+export async function getMyShop(accessToken: string): Promise<OnboardResult> {
+  const BASE = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_URL ?? '/api/v1';
+  const response = await fetch(`${BASE}/onboard`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+  });
+  if (!response.ok) {
+    let body: { error?: string } = {};
+    try { body = await response.json(); } catch { /* ignore */ }
+    throw { message: body.error ?? `GET onboard failed (${response.status})`, statusCode: response.status } as ApiError;
+  }
+  return response.json() as Promise<OnboardResult>;
+}
+
+/**
+ * POST /api/v1/onboard — idempotent; creates owner+shop or returns existing.
+ * Uses an explicit access token so it works immediately after signup.
  */
 export async function onboard(
   data: { owner_name: string; shop_name: string },
